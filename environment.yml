@@ -1,0 +1,12 @@
+name: openMM
+channels:
+  - conda-forge
+dependencies:
+  - pip
+  - wheel
+  - python=3.14
+  - pandas
+  - matplotlib
+  - ipykernel
+  - openmm
+  - openmm-setup

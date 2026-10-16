@@ -1,0 +1,28 @@
+# Data and outputs (live in ~/lab or ~/scratch, not git)
+data/
+results/
+runs/
+logs/
+*.out
+*.err
+
+# Large simulation/array files
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.dcd
+*.xtc
+*.trr
+*.chk
+*.nc
+*.pkl
+
+# Python / Jupyter
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Editors / OS
+.vscode/
+.DS_Store
