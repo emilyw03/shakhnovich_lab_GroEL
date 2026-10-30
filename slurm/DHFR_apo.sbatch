@@ -5,15 +5,16 @@
 # Each job gets its own folder: ~/scratch/GroEL/runs/<date>_<jobid>/
 # Copy results worth keeping to ~/lab/GroEL/results/ before scratch purges them (90 days).
 
-#SBATCH --job-name=groel
+#SBATCH --job-name=DHFR_apo_100ns
 #SBATCH --account=shakhnovich_lab
-#SBATCH --partition=test             # test (<=12h, quick checks) | shared | sapphire | shakhnovich | gpu | gpu_test
+#SBATCH --partition=gpu_test             # test (<=12h, quick checks) | shared | sapphire | shakhnovich | gpu | gpu_test | gpu_requeue, # can only request one gpu partition at once
+                                         # only run MD on gpu, analysis on CPU
 #SBATCH --time=0-01:00               # D-HH:MM
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
-##SBATCH --gres=gpu:1                # uncomment (and use a gpu partition) for GPU OpenMM runs
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=16G
+#SBATCH --gres=gpu:1                # uncomment (and use a gpu partition) for GPU OpenMM runs
 #SBATCH --output=/n/home00/ewang03/scratch/GroEL/logs/%x_%j.out
 #SBATCH --error=/n/home00/ewang03/scratch/GroEL/logs/%x_%j.err
 ##SBATCH --mail-type=END,FAIL
@@ -22,11 +23,11 @@
 set -euo pipefail
 
 # ---- What to run ----
-SCRIPT=scripts/your_script.py        # path relative to the repo root
+SCRIPT=scripts/DHFR_apo.py        # path relative to the repo root
 ARGS=""                              # extra arguments for the script
 
 # ---- Paths ----
-REPO=/n/home00/ewang03/shakhnovich_lab_GroEL
+REPO=/n/home00/ewang03/lab/shakhnovich_lab_GroEL/
 RUN_DIR=/n/home00/ewang03/scratch/GroEL/runs/$(date +%F)_${SLURM_JOB_ID}
 mkdir -p "$RUN_DIR"
 
@@ -51,6 +52,6 @@ cp "$0" "$RUN_DIR/job.sbatch"
 
 # ---- Run ----
 # The script should write its outputs to the folder passed as --outdir
-python "$SCRIPT" --outdir "$RUN_DIR" $ARGS
+python "$SCRIPT" "$RUN_DIR" $ARGS
 
 echo "finished: $(date)" >> "$RUN_DIR/run_info.txt"
