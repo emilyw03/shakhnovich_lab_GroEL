@@ -9,7 +9,7 @@
 #SBATCH --account=shakhnovich_lab
 #SBATCH --partition=gpu_test             # test (<=12h, quick checks) | shared | sapphire | shakhnovich | gpu | gpu_test | gpu_requeue, # can only request one gpu partition at once
                                          # only run MD on gpu, analysis on CPU
-#SBATCH --time=0-01:00               # D-HH:MM
+#SBATCH --time=0-12:00               # D-HH:MM
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
@@ -24,7 +24,8 @@ set -euo pipefail
 
 # ---- What to run ----
 SCRIPT=scripts/DHFR_apo.py        # path relative to the repo root
-ARGS=""                              # extra arguments for the script
+ARGS=""                              # use this line if starting a new sim
+#ARGS="--checkpoint /n/home00/ewang03/scratch/GroEL/runs/<date>_<jobid>/checkpoint.chk"     # Uncomment if resuming a run from a checkpoint
 
 # ---- Paths ----
 REPO=/n/home00/ewang03/lab/shakhnovich_lab_GroEL/
