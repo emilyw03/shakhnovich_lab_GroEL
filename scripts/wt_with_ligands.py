@@ -22,6 +22,15 @@ import openmm
 import openmm.app
 import openmm.unit as omm_unit
 
+import argparse
+import os
+
+# Output folder (the sbatch passes the run directory as the first argument)
+parser = argparse.ArgumentParser()
+parser.add_argument("outdir", type=str)
+args = parser.parse_args()
+os.makedirs(args.outdir, exist_ok=True)
+
 # step 1: prepare protein component
 protein = Topology.from_pdb("/n/home00/ewang03/lab/GroEL/openMM_inputs/WT/WT_apo.pdb") # import protein topology (pdb)
 ff14sb = ForceField("ff14sb_off_impropers_0.0.3.offxml") # force field to parametrize protein
@@ -79,7 +88,7 @@ print(complex_intrcg.topology.n_atoms, "atoms")  # 2491 protein + 39 TMP + 74 NA
 print("net charge:", round(sum(q.m for q in complex_intrcg["Electrostatics"].charges.values()), 4))  # -14 (protein -10, NADPH -4)
 
 # Sanity checks: single-point energy (vacuum, no box yet) and a PDB to inspect the poses in VMD/PyMOL
-complex_intrcg.to_pdb("DHFR_TMP_NADPH.pdb")
+complex_intrcg.to_pdb(os.path.join(args.outdir, "WT_TMP_NADPH.pdb"))
 get_openmm_energies(complex_intrcg, combine_nonbonded_forces=False)
 
 # step 3: solvate 
@@ -134,7 +143,7 @@ print(solvated_intrcg.topology.n_atoms, "atoms | net charge:",
       round(sum(q.m for q in solvated_intrcg["Electrostatics"].charges.values()), 4))
 
 # Starting structure for visualization / as the topology file for trajectories
-solvated_intrcg.to_pdb("DHFR_TMP_NADPH_solvated.pdb")
+solvated_intrcg.to_pdb(os.path.join(args.outdir, "WT_TMP_NADPH_solvated.pdb"))
 
 # Single-point energy with PME. vdW starts large and positive (~ +3e5 kJ/mol): packmol leaves waters closer
 # than their LJ radius. It comes from water-water contacts (not the protein) and goes away on minimization
@@ -143,7 +152,7 @@ print(get_openmm_energies(solvated_intrcg, combine_nonbonded_forces=False, platf
 # step five: export to OpenMM
 openmm_system = solvated_intrcg.to_openmm()
 openmm_topology = solvated_intrcg.topology.to_openmm(ensure_unique_atom_names=False)
-solvated_intrcg.to_pdb("wt_nadph_tmp_start.pdb")
+solvated_intrcg.to_pdb(os.path.join(args.outdir, "wt_nadph_tmp_start.pdb"))
 print(type(openmm_system), type(openmm_topology))
 
 # step six: run simulation
@@ -181,12 +190,11 @@ state = simulation.context.getState()
 print("box volume after NPT:", state.getPeriodicBoxVolume())
 
 # Production MD (NPT). Saves a frame every 10 ps; adjust n_steps for length (500,000 steps x 2 fs = 1 ns)
-simulation.reporters.append(openmm.app.DCDReporter("wt_with_ligands.dcd", 5000))
-simulation.reporters.append(openmm.app.StateDataReporter(
-    "wt_with_ligands_prod.csv", 5000, step=True, time=True, potentialEnergy=True,
+simulation.reporters.append(openmm.app.DCDReporter(os.path.join(args.outdir, "wt_with_ligands.dcd"), 5000))
+simulation.reporters.append(openmm.app.StateDataReporter(os.path.join(args.outdir, "wt_with_ligands_prod.csv"), 5000, step=True, time=True, potentialEnergy=True,
     temperature=True, volume=True, density=True, speed=True,
 ))
 simulation.step(500_000)
 
 # Save final state so the run can be extended later
-simulation.saveState("wt_with_ligands.xml")
+simulation.saveState(os.path.join(args.outdir, "wt_with_ligands.xml"))
