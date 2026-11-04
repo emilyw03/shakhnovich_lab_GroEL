@@ -189,12 +189,17 @@ simulation.step(250_000)
 state = simulation.context.getState()
 print("box volume after NPT:", state.getPeriodicBoxVolume())
 
-# Production MD (NPT). Saves a frame every 10 ps; adjust n_steps for length (500,000 steps x 2 fs = 1 ns)
-simulation.reporters.append(openmm.app.DCDReporter(os.path.join(args.outdir, "wt_with_ligands.dcd"), 5000))
-simulation.reporters.append(openmm.app.StateDataReporter(os.path.join(args.outdir, "wt_with_ligands_prod.csv"), 5000, step=True, time=True, potentialEnergy=True,
-    temperature=True, volume=True, density=True, speed=True,
-))
-simulation.step(500_000)
+# Re-zero the step counter and simulation time so production starts at step 0 / 0 ps
+simulation.currentStep = 0
+simulation.context.setTime(0)
+
+# Production MD (NPT). Saves a frame every 1000 ps; adjust n_steps for length (50,000,000 steps x 2 fs = 100 ns)
+simulation.reporters.append(openmm.app.DCDReporter(os.path.join(args.outdir, "wt_with_ligands.dcd"), 500_000))
+simulation.reporters.append(openmm.app.StateDataReporter(os.path.join(args.outdir, "wt_with_ligands_prod.csv"), 500_000, step=True, time=True, potentialEnergy=True,
+    temperature=True, volume=True, density=True, speed=True))
+# Checkpoint every 100 ps (50,000 steps x 2 fs); the file is overwritten each time so a killed run can resume
+simulation.reporters.append(openmm.app.CheckpointReporter(os.path.join(args.outdir, "checkpoint.chk"), 50_000))
+simulation.step(50_000_000)
 
 # Save final state so the run can be extended later
 simulation.saveState(os.path.join(args.outdir, "wt_with_ligands.xml"))

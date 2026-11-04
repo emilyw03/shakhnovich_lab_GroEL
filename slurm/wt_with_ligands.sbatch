@@ -9,7 +9,7 @@
 #SBATCH --account=shakhnovich_lab
 #SBATCH --partition=gpu_test             # test (<=12h, quick checks) | shared | sapphire | shakhnovich | gpu | gpu_test | gpu_requeue, # can only request one gpu partition at once
                                          # only run MD on gpu, analysis on CPU
-#SBATCH --time=0-2:00               # D-HH:MM
+#SBATCH --time=0-12:00               # D-HH:MM
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
