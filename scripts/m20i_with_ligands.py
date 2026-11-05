@@ -111,8 +111,8 @@ if args.checkpoint is None:
     print("net charge:", round(sum(q.m for q in complex_intrcg["Electrostatics"].charges.values()), 4))  # -14 (protein -10, NADPH -4)
 
     # Sanity checks: single-point energy (vacuum, no box yet) and a PDB to inspect the poses in VMD/PyMOL
-    complex_intrcg.to_pdb(os.path.join(args.outdir, "m20i_tmp_nadph.pdb"))
-    print(get_openmm_energies(complex_intrcg, combine_nonbonded_forces=False))
+    #complex_intrcg.to_pdb(os.path.join(args.outdir, "m20i_tmp_nadph.pdb"))
+    #print(get_openmm_energies(complex_intrcg, combine_nonbonded_forces=False))
 
     # step 3: solvate
     # 1. Center the complex in a rhombic dodecahedron box and fill it with water + 0.15 M NaCl (neutralizing the -14 charge) with packmol
@@ -232,7 +232,7 @@ else:
 remaining_steps = TOTAL_STEPS - simulation.currentStep
 print(f"Production from step {simulation.currentStep}: {remaining_steps} steps remaining")
 
-simulation.reporters.append(openmm.app.XTCReporter(os.path.join(args.outdir, "m20i_with_ligands.dcd"), REPORT_INTERVAL))
+simulation.reporters.append(openmm.app.XTCReporter(os.path.join(args.outdir, "m20i_with_ligands.xtc"), REPORT_INTERVAL))
 simulation.reporters.append(openmm.app.StateDataReporter(os.path.join(args.outdir, "m20i_with_ligands_prod.csv"), REPORT_INTERVAL,
     step=True, time=True, potentialEnergy=True, temperature=True, volume=True, density=True, speed=True))
 # Checkpoint every 100 ps; the file is overwritten each time so a killed run can resume with --checkpoint
