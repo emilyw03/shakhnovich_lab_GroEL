@@ -1,10 +1,10 @@
 # m20i_with_ligands.py
 # Simulate M20I DHFR with TMP and NADPH bound (ff14SB protein, Sage 2.3.0 ligands/water/ions) with OpenMM.
 #
-# New run:     python wt_with_ligands.py <outdir>
+# New run:     python m20i_with_ligands.py <outdir>
 #              builds and solvates the system, minimizes, equilibrates (NVT then NPT), then runs production
-# Resume:      python wt_with_ligands.py <outdir> --checkpoint <old run dir>/checkpoint.chk
-#              skips building and equilibration, loads system.xml + wt_nadph_tmp_start.pdb from the checkpoint's
+# Resume:      python m20i_with_ligands.py <outdir> --checkpoint <old run dir>/checkpoint.chk
+#              skips building and equilibration, loads system.xml + m20i_nadph_tmp_start.pdb from the checkpoint's
 #              run folder, and continues production from the checkpoint's step until TOTAL_STEPS is reached
 
 # import packages
@@ -37,7 +37,7 @@ import shutil
 # Output folder (the sbatch passes the run directory as the first argument)
 parser = argparse.ArgumentParser()
 parser.add_argument("outdir", type=str)
-parser.add_argument("--checkpoint", type=str) # resume from this checkpoint.chk; its run folder must also hold system.xml and wt_nadph_tmp_start.pdb
+parser.add_argument("--checkpoint", type=str) # resume from this checkpoint.chk; its run folder must also hold system.xml and m20i_nadph_tmp_start.pdb
 args = parser.parse_args()
 os.makedirs(args.outdir, exist_ok=True)
 
@@ -47,7 +47,7 @@ REPORT_INTERVAL = 5_000       # one frame / log line every 10 ps
 
 # Files a resumed run needs from the run it continues. Kept in every run folder so resumes can be chained
 SYSTEM_XML = "system.xml"                # OpenMM System: force field parameters, constraints, barostat
-START_PDB = "wt_nadph_tmp_start.pdb"     # topology (atom/residue names) for the Simulation and trajectories
+START_PDB = "m20i_nadph_tmp_start.pdb"     # topology (atom/residue names) for the Simulation and trajectories
 
 
 def load_with_template(sdf, smiles, name):
@@ -111,7 +111,7 @@ if args.checkpoint is None:
     print("net charge:", round(sum(q.m for q in complex_intrcg["Electrostatics"].charges.values()), 4))  # -14 (protein -10, NADPH -4)
 
     # Sanity checks: single-point energy (vacuum, no box yet) and a PDB to inspect the poses in VMD/PyMOL
-    complex_intrcg.to_pdb(os.path.join(args.outdir, "WT_TMP_NADPH.pdb"))
+    complex_intrcg.to_pdb(os.path.join(args.outdir, "m20i_tmp_nadph.pdb"))
     print(get_openmm_energies(complex_intrcg, combine_nonbonded_forces=False))
 
     # step 3: solvate
