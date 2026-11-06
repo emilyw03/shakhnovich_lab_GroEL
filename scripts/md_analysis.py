@@ -10,8 +10,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-traj = md.load("/n/home00/ewang03/scratch/GroEL/runs/DHFR_apo_100ns_combined_54960039+55672625/DHFR_apo_100ns_stride100_dry.xtc",
-               top = "/n/home00/ewang03/lab/GroEL/results/openMM/DHFR_apo_protein.pdb") # load trajectory (xtc) and topology (pdb)
+traj = md.load("/n/home00/ewang03/scratch/GroEL/runs/2026-11-04_57868420/wt_with_ligands.xtc",
+               top = "/n/home00/ewang03/scratch/GroEL/runs/2026-11-04_57868420/wt_nadph_tmp_start.pdb") # load trajectory (xtc) and topology (pdb)
 
 traj.superpose(traj) # normalize structure to first frame
 rmsf = md.rmsf(traj, None, mode='residue') # compute RMSF

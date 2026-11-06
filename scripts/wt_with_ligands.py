@@ -3,7 +3,7 @@
 #
 # New run:     python wt_with_ligands.py <outdir>
 #              builds and solvates the system, minimizes, equilibrates (NVT then NPT), then runs production
-# Resume:      python wt_with_ligands.py <outdir> --checkpoint <old run dir>/checkpoint.chk
+# Resume:      python wt_with_ligands.py <outdir> --checkpoint <old run dir>/checkpoint.xml
 #              skips building and equilibration, loads system.xml + wt_nadph_tmp_start.pdb from the checkpoint's
 #              run folder, and continues production from the checkpoint's step until TOTAL_STEPS is reached
 
@@ -37,11 +37,11 @@ import shutil
 # Output folder (the sbatch passes the run directory as the first argument)
 parser = argparse.ArgumentParser()
 parser.add_argument("outdir", type=str)
-parser.add_argument("--checkpoint", type=str) # resume from this checkpoint.chk; its run folder must also hold system.xml and wt_nadph_tmp_start.pdb
+parser.add_argument("--checkpoint", type=str) # resume from this checkpoint.xml (or an older binary .chk); its run folder must also hold system.xml and wt_nadph_tmp_start.pdb
 args = parser.parse_args()
 os.makedirs(args.outdir, exist_ok=True)
 
-TOTAL_STEPS = 50_000_000        # production length across all runs (50,000,000 steps x 2 fs = 100 ns)
+TOTAL_STEPS = 500_000_000        # production length across all runs (500,000,000 steps x 2 fs = 1000 ns = 1 us)
 CHECKPOINT_INTERVAL = 50_000    # 100 ps
 REPORT_INTERVAL = 5_000       # one frame / log line every 10 ps
 
@@ -225,8 +225,12 @@ else:
     simulation = openmm.app.Simulation(pdb.topology, system, integrator)
     print("platform:", simulation.context.getPlatform().getName())
 
-    # Restores positions, velocities, box vectors, time and the step counter
-    simulation.loadCheckpoint(args.checkpoint)
+    # Restores positions, velocities, box vectors, time and the step counter.
+    # A .xml State works on any GPU type; a binary .chk only loads on the same platform and GPU model
+    if args.checkpoint.endswith(".xml"):
+        simulation.loadState(args.checkpoint)
+    else:
+        simulation.loadCheckpoint(args.checkpoint)
 
 # step 6: production MD (NPT). Step numbers continue from the checkpoint when resuming
 remaining_steps = TOTAL_STEPS - simulation.currentStep
@@ -235,10 +239,12 @@ print(f"Production from step {simulation.currentStep}: {remaining_steps} steps r
 simulation.reporters.append(openmm.app.XTCReporter(os.path.join(args.outdir, "wt_with_ligands.xtc"), REPORT_INTERVAL))
 simulation.reporters.append(openmm.app.StateDataReporter(os.path.join(args.outdir, "wt_with_ligands_prod.csv"), REPORT_INTERVAL,
     step=True, time=True, potentialEnergy=True, temperature=True, volume=True, density=True, speed=True))
-# Checkpoint every 100 ps; the file is overwritten each time so a killed run can resume with --checkpoint
-simulation.reporters.append(openmm.app.CheckpointReporter(os.path.join(args.outdir, "checkpoint.chk"), CHECKPOINT_INTERVAL))
+# Checkpoint every 100 ps; the file is overwritten each time so a killed run can resume with --checkpoint.
+# writeState=True saves a portable XML State instead of a binary checkpoint, because the partitions this runs on
+# have different GPU models (A100, MIG slices, H200) and a requeued job can land on any of them
+simulation.reporters.append(openmm.app.CheckpointReporter(os.path.join(args.outdir, "checkpoint.xml"), CHECKPOINT_INTERVAL, writeState=True))
 simulation.step(remaining_steps)
 
-# Save final state and checkpoint so the run can be extended later
+# Save final state so the run can be extended later
 simulation.saveState(os.path.join(args.outdir, "wt_with_ligands.xml"))
-simulation.saveCheckpoint(os.path.join(args.outdir, "checkpoint.chk"))
+simulation.saveState(os.path.join(args.outdir, "checkpoint.xml"))
