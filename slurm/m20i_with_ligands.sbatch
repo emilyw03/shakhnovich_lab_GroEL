@@ -5,7 +5,7 @@
 # Each job gets its own folder: ~/scratch/GroEL/runs/<date>_<jobid>/
 # Copy results worth keeping to ~/lab/GroEL/results/ before scratch purges them (90 days).
 
-#SBATCH --job-name=m20i_with_ligands_1us
+#SBATCH --job-name=m20i_with_ligands_1us_05
 #SBATCH --account=shakhnovich_lab
 #SBATCH --partition=gpu,gpu_requeue,gpu_h200   # comma-separated, NO spaces; Slurm starts the job on whichever has a GPU free first
                                          # test (<=12h, quick checks) | shared | sapphire | shakhnovich | gpu | gpu_test | gpu_requeue | gpu_h200
