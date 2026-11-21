@@ -1,9 +1,9 @@
-# wt_with_ligands.py
-# Simulate WT DHFR with TMP and NADPH bound (ff14SB protein, Sage 2.3.0 ligands/water/ions) with OpenMM.
+# wt_amber.py
+# Simulate WT DHFR with TMP+ (N1-protonated) and NADPH bound (ff14SB protein, Sage 2.3.0 ligands/water/ions) with OpenMM.
 #
-# New run:     python wt_with_ligands.py <outdir>
+# New run:     python wt_amber.py <outdir>
 #              builds and solvates the system, minimizes, equilibrates (NVT then NPT), then runs production
-# Resume:      python wt_with_ligands.py <outdir> --checkpoint <old run dir>/checkpoint.xml
+# Resume:      python wt_amber.py <outdir> --checkpoint <old run dir>/checkpoint.xml
 #              skips building and equilibration, loads system.xml + wt_nadph_tmp_start.pdb from the checkpoint's
 #              run folder, and continues production from the checkpoint's step until TOTAL_STEPS is reached
 
@@ -83,8 +83,9 @@ if args.checkpoint is None:
     )
 
     # step 2: prepare ligand component
+    # TMP is N1-protonated (TMP+, [nH+] in the SMILES): crystal-pose heavy atoms from the SDF, H atoms added from the SMILES
     tmp = load_with_template("/n/home00/ewang03/lab/GroEL/openMM_inputs/WT/tmp.sdf",
-        "COc1cc(Cc2cnc(N)nc2N)cc(OC)c1OC", "TMP")
+        "COc1cc(Cc2c[nH+]c(N)nc2N)cc(OC)c1OC", "TMP")
     nadph = load_with_template("/n/home00/ewang03/lab/GroEL/openMM_inputs/WT/nadph.sdf",
                                "NC(=O)C1=CN([C@@H]2O[C@H](COP(=O)([O-])OP(=O)([O-])OC[C@H]3O[C@@H](n4cnc5c(N)ncnc54)[C@H](OP(=O)([O-])[O-])[C@@H]3O)[C@@H](O)[C@H]2O)C=CC1",
                                "NADPH")
@@ -107,15 +108,15 @@ if args.checkpoint is None:
     # scaling 0.833333 (ff14SB) vs 0.8333333333 (Sage) -- harmless, both are 1/1.2
     complex_intrcg = protein_intrcg.combine(tmp_intrcg).combine(nadph_intrcg)
 
-    print(complex_intrcg.topology.n_atoms, "atoms")  # 2491 protein + 39 TMP + 74 NADPH = 2604
-    print("net charge:", round(sum(q.m for q in complex_intrcg["Electrostatics"].charges.values()), 4))  # -14 (protein -10, NADPH -4)
+    print(complex_intrcg.topology.n_atoms, "atoms")  # 2491 protein + 40 TMP+ + 74 NADPH = 2605
+    print("net charge:", round(sum(q.m for q in complex_intrcg["Electrostatics"].charges.values()), 4))  # -13 (protein -10, TMP+ +1, NADPH -4)
 
     # Sanity checks: single-point energy (vacuum, no box yet) and a PDB to inspect the poses in VMD/PyMOL
     #complex_intrcg.to_pdb(os.path.join(args.outdir, "WT_TMP_NADPH.pdb"))
     #print(get_openmm_energies(complex_intrcg, combine_nonbonded_forces=False))
 
     # step 3: solvate
-    # 1. Center the complex in a rhombic dodecahedron box and fill it with water + 0.15 M NaCl (neutralizing the -14 charge) with packmol
+    # 1. Center the complex in a rhombic dodecahedron box and fill it with water + 0.15 M NaCl (neutralizing the -13 charge) with packmol
     # 2. Parametrize the water and ions with Sage (TIP3P, Na+/Cl-) in their own Interchange
     # 3. Combine with the protein-ligand Interchange
 
@@ -132,10 +133,10 @@ if args.checkpoint is None:
     complex_top.set_positions(solute_xyz - solute_xyz.mean(axis=0) + np.diagonal(box.m) * box.u / 2)
     complex_top.box_vectors = box
 
-    # Add water + 0.15 M NaCl, with extra Na+ to neutralize the complex's -14 charge (~15 s)
+    # Add water + 0.15 M NaCl, with extra Na+ to neutralize the complex's -13 charge (~15 s)
     solvated_top = solvate_topology(complex_top, nacl_conc=0.15 * unit.molar, padding=None)
 
-    print(Counter(m.atom(0).symbol for m in solvated_top.molecules if m.n_atoms < 5))  # ~7281 O (water), 28 Na, 14 Cl
+    print(Counter(m.atom(0).symbol for m in solvated_top.molecules if m.n_atoms < 5))  # ~7280 O (water), 27 Na, 14 Cl
     print("total atoms:", solvated_top.n_atoms, "| net charge:", sum(m.total_charge for m in solvated_top.molecules))
 
     # Water + ions are every molecule after the solute (protein, TMP, NADPH)

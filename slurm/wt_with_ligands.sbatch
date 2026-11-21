@@ -26,7 +26,7 @@
 set -euo pipefail
 
 # ---- What to run ----
-SCRIPT=scripts/wt_with_ligands.py        # path relative to the repo root
+SCRIPT=/n/home00/ewang03/lab/shakhnovich_lab_GroEL/scripts/wt/wt_amber.py        # path relative to the repo root
 ARGS=""                              # use this line if starting a new sim
 #ARGS="--checkpoint /n/home00/ewang03/scratch/GroEL/runs/<date>_<jobid>/checkpoint.xml"     # Uncomment if resuming a run from a checkpoint
 
