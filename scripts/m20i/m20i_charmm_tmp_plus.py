@@ -24,7 +24,7 @@ parser.add_argument("--checkpoint", type=str) # resume from this checkpoint.xml 
 args = parser.parse_args()
 os.makedirs(args.outdir, exist_ok=True)
 
-TOTAL_STEPS = 500_000        # production length across all runs (500,000,000 steps x 2 fs = 1000 ns = 1 us)
+TOTAL_STEPS = 500_000_000        # production length across all runs (500,000,000 steps x 2 fs = 1000 ns = 1 us)
 CHECKPOINT_INTERVAL = 50_000    # 100 ps
 REPORT_INTERVAL = 5_000       # one frame / log line every 10 ps
 

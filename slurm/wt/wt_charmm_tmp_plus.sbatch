@@ -5,13 +5,15 @@
 # Each job gets its own folder: ~/scratch/GroEL/runs/<date>_<jobid>/
 # Copy results worth keeping to ~/lab/GroEL/results/ before scratch purges them (90 days).
 
-#SBATCH --job-name=wt_with_ligands_1us_05
+#SBATCH --job-name=wt_charmm_tmp_plus_1us_01
 #SBATCH --account=shakhnovich_lab
-#SBATCH --partition=gpu,gpu_requeue,gpu_h200   # comma-separated, NO spaces; Slurm starts the job on whichever has a GPU free first
+#SBATCH --partition=gpu,gpu_h200   # comma-separated, NO spaces; Slurm starts the job on whichever has a GPU free first
                                          # test (<=12h, quick checks) | shared | sapphire | shakhnovich | gpu | gpu_test | gpu_requeue | gpu_h200
                                          # only run MD on gpu, analysis on CPU
-#SBATCH --time=3-00:00               # D-HH:MM (3 days is the max on all three partitions)
+#SBATCH --time=3-00:00              # D-HH:MM (3 days is the max on all three partitions)
 #SBATCH --requeue                    # gpu_requeue can preempt the job; it is then requeued and resumes from its last checkpoint (see Paths)
+#SBATCH --signal=B:USR1@600          # 10 min before the time limit, send USR1 to this script, which requeues the job
+                                     # (a time-limit kill is not requeued by --requeue; see the trap under Run)
 #SBATCH --open-mode=append           # keep the .out/.err from earlier attempts when the job is requeued
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -26,7 +28,7 @@
 set -euo pipefail
 
 # ---- What to run ----
-SCRIPT=/n/home00/ewang03/lab/shakhnovich_lab_GroEL/scripts/wt/wt_amber.py        # path relative to the repo root
+SCRIPT=/n/home00/ewang03/lab/shakhnovich_lab_GroEL/scripts/wt/wt_charmm_tmp_plus.py        # path relative to the repo root
 ARGS=""                              # use this line if starting a new sim
 #ARGS="--checkpoint /n/home00/ewang03/scratch/GroEL/runs/<date>_<jobid>/checkpoint.xml"     # Uncomment if resuming a run from a checkpoint
 
@@ -69,6 +71,10 @@ cp "$0" "$RUN_DIR/job.sbatch"
 
 # ---- Run ----
 # The script should write its outputs to the folder passed as --outdir
-python -u "$SCRIPT" "$RUN_DIR" $ARGS   # -u: print to the .out log immediately instead of buffering
+# Near the time limit (--signal above), requeue this job: the requeued attempt resumes from the newest checkpoint
+# (see Paths). python runs in the background so the trap can fire while it is running
+trap 'echo "time limit near, requeueing job $SLURM_JOB_ID: $(date)"; scontrol requeue "$SLURM_JOB_ID"' USR1
+python -u "$SCRIPT" "$RUN_DIR" $ARGS &   # -u: print to the .out log immediately instead of buffering
+wait $!
 
 echo "finished: $(date)" >> "$RUN_DIR/run_info.txt"
