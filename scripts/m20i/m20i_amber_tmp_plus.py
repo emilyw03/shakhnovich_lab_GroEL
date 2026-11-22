@@ -1,9 +1,9 @@
-# m20i_amber.py
+# m20i_amber_tmp_plus.py
 # Simulate M20I DHFR with TMP+ (N1-protonated) and NADPH bound (ff14SB protein, Sage 2.3.0 ligands/water/ions) with OpenMM.
 #
-# New run:     python m20i_amber.py <outdir>
+# New run:     python m20i_amber_tmp_plus.py <outdir>
 #              builds and solvates the system, minimizes, equilibrates (NVT then NPT), then runs production
-# Resume:      python m20i_amber.py <outdir> --checkpoint <old run dir>/checkpoint.xml
+# Resume:      python m20i_amber_tmp_plus.py <outdir> --checkpoint <old run dir>/checkpoint.xml
 #              skips building and equilibration, loads system.xml + m20i_nadph_tmp_start.pdb from the checkpoint's
 #              run folder, and continues production from the checkpoint's step until TOTAL_STEPS is reached
 

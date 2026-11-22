@@ -10,7 +10,7 @@
 #SBATCH --partition=gpu_test   # comma-separated, NO spaces; Slurm starts the job on whichever has a GPU free first
                                          # test (<=12h, quick checks) | shared | sapphire | shakhnovich | gpu | gpu_test | gpu_requeue | gpu_h200
                                          # only run MD on gpu, analysis on CPU
-#SBATCH --time=30:00              # D-HH:MM (3 days is the max on all three partitions)
+#SBATCH --time=1:00:00              # D-HH:MM (3 days is the max on all three partitions)
 #SBATCH --requeue                    # gpu_requeue can preempt the job; it is then requeued and resumes from its last checkpoint (see Paths)
 #SBATCH --open-mode=append           # keep the .out/.err from earlier attempts when the job is requeued
 #SBATCH --nodes=1
